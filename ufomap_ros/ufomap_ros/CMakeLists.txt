@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
   sensor_msgs
+  ufomap_msgs
 )
 
 find_package(ufomap REQUIRED)

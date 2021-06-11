@@ -45,10 +45,11 @@
 // UFO
 #include <ufo/map/occupancy_map.h>
 #include <ufo/map/occupancy_map_color.h>
+#include <ufo/map/occupancy_map_semantic_color.h>
 
 // UFO ROS
-#include <ufomap_msgs/UFOMapStamped.h>
 #include <ufomap_msgs/UFOMapMetaData.h>
+#include <ufomap_msgs/UFOMapStamped.h>
 
 // ROS
 #ifndef Q_MOC_RUN
@@ -173,7 +174,9 @@ class UFOMapDisplay : public rviz::Display
 	std::string getStrVoxelType(VoxelType const& type) const;
 
  protected:
-	std::variant<std::monostate, ufo::map::OccupancyMap, ufo::map::OccupancyMapColor> map_;
+	std::variant<std::monostate, ufo::map::OccupancyMap, ufo::map::OccupancyMapColor,
+	             ufo::map::OccupancyMapSemanticColor>
+	    map_;
 
 	unsigned int num_messages_received_ = 0;
 	bool should_update_ = false;

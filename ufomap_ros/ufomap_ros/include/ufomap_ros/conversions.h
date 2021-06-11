@@ -53,7 +53,9 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/Vector3.h>
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <ufomap_msgs/Labels.h>
 
 namespace ufomap_ros
 {
@@ -62,6 +64,22 @@ void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in, ufo::map::PointCloud& cl
 
 void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
               ufo::map::PointCloudColor& cloud_out);
+
+// TODO ADD UFOTOROS version
+void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
+              ufomap_msgs::Labels const& labels_in,
+              ufo::map::PointCloudSemanticColor& cloud_out);
+
+void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
+              ufo::map::PointCloudSemanticColor& cloud_out);
+
+void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
+              sensor_msgs::Image const& instance_image,
+              ufo::map::PointCloudSemanticColor& cloud_out);
+
+// Temp, Gazebo experiment
+void rosToUfoExperiment(sensor_msgs::PointCloud2 const& cloud_in,
+                        ufo::map::PointCloudSemanticColor& cloud_out);
 
 void ufoToRos(ufo::map::PointCloud const& cloud_in, sensor_msgs::PointCloud2& cloud_out);
 

@@ -64,7 +64,8 @@ Server::Server(ros::NodeHandle &nh, ros::NodeHandle &nh_priv)
 	if (nh_priv_.param("color_map", false)) {
 		map_.emplace<ufo::map::OccupancyMapColor>(resolution, depth_levels, false);
 	} else {
-		map_.emplace<ufo::map::OccupancyMap>(resolution, depth_levels, false);
+		map_.emplace<ufo::map::OccupancyMapSemanticColor>(resolution, depth_levels, 0, false,
+		                                                  0.53, 0.45);
 	}
 
 	// Enable min/max change detection
@@ -111,8 +112,8 @@ void Server::cloudCallback(sensor_msgs::PointCloud2::ConstPtr const &msg)
 			    auto start = std::chrono::steady_clock::now();
 
 			    // Update map
-			    ufo::map::PointCloudColor cloud;
-			    ufomap_ros::rosToUfo(*msg, cloud);
+			    ufo::map::PointCloudSemanticColor cloud;
+			    ufomap_ros::rosToUfoExperiment(*msg, cloud);
 			    cloud.transform(transform, true);
 
 			    map.insertPointCloudDiscrete(transform.translation(), cloud, max_range_,
@@ -185,29 +186,20 @@ void Server::cloudCallback(sensor_msgs::PointCloud2::ConstPtr const &msg)
 					    // TODO: should this be here?
 					    map.resetMinMaxChangeDetection();
 
-					    update_async_handler_ = std::async(
-					        std::launch::async, [this, aabb, stamp = msg->header.stamp]() {
-						        std::visit(
-						            [this, &aabb, stamp](auto &map) {
-							            if constexpr (!std::is_same_v<std::decay_t<decltype(map)>,
-							                                          std::monostate>) {
-								            for (int i = 0; i < map_pub_.size(); ++i) {
-									            if (map_pub_[i] && (0 < map_pub_[i].getNumSubscribers() ||
-									                                map_pub_[i].isLatched())) {
-										            ufomap_msgs::UFOMapStamped::Ptr msg(
-										                new ufomap_msgs::UFOMapStamped);
-										            if (ufomap_msgs::ufoToMsg(map, msg->map, aabb, compress_,
-										                                      i)) {
-											            msg->header.stamp = stamp;
-											            msg->header.frame_id = frame_id_;
-											            map_pub_[i].publish(msg);
-										            }
-									            }
-								            }
-							            }
-						            },
-						            map_);
-					        });
+					    update_async_handler_ = std::async(std::launch::async, [this, &aabb, &msg,
+					                                                            &map]() {
+						    for (int i = 0; i < map_pub_.size(); ++i) {
+							    if (map_pub_[i] &&
+							        (0 < map_pub_[i].getNumSubscribers() || map_pub_[i].isLatched())) {
+								    ufomap_msgs::UFOMapStamped::Ptr msg(new ufomap_msgs::UFOMapStamped);
+								    if (ufomap_msgs::ufoToMsg(map, msg->map, aabb, compress_, i)) {
+									    msg->header.stamp = msg->header.stamp;
+									    msg->header.frame_id = frame_id_;
+									    map_pub_[i].publish(msg);
+								    }
+							    }
+						    }
+					    });
 
 					    double update_time =
 					        std::chrono::duration<float, std::chrono::seconds::period>(
@@ -386,8 +378,8 @@ bool Server::saveMapCallback(ufomap_srvs::SaveMap::Request &request,
 		    if constexpr (!std::is_same_v<std::decay_t<decltype(map)>, std::monostate>) {
 			    ufo::geometry::BoundingVolume bv =
 			        ufomap_msgs::msgToUfo(request.bounding_volume);
-			    response.success = map.write(request.filename, bv, request.compress,
-			                                 request.depth, 1, request.compression_level);
+			    response.success =
+			        map.write(request.filename, bv, request.compress, request.depth);
 		    } else {
 			    response.success = false;
 		    }

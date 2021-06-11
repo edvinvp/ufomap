@@ -45,6 +45,8 @@
 // ROS
 #include <sensor_msgs/point_cloud2_iterator.h>
 
+#include <set>
+
 namespace ufomap_ros
 {
 void getFields(sensor_msgs::PointCloud2 const& cloud, bool& has_x, bool& has_y,
@@ -70,6 +72,38 @@ void getFields(sensor_msgs::PointCloud2 const& cloud, bool& has_x, bool& has_y,
 			has_rgb = true;
 		} else if ("b" == field.name) {
 			has_rgb = true;
+		}
+	}
+}
+
+// Overload for semantic maps
+void getFields(sensor_msgs::PointCloud2 const& cloud, bool& has_x, bool& has_y,
+               bool& has_z, bool& has_rgb, bool& has_label)
+{
+	has_x = false;
+	has_y = false;
+	has_z = false;
+	has_rgb = false;
+	has_label = false;
+
+	for (auto const& field : cloud.fields) {
+		if ("x" == field.name) {
+			has_x = true;
+		} else if ("y" == field.name) {
+			has_y = true;
+		} else if ("z" == field.name) {
+			has_z = true;
+		} else if ("rgb" == field.name) {
+			has_rgb = true;
+		} else if ("r" == field.name) {
+			has_rgb = true;
+		} else if ("g" == field.name) {
+			has_rgb = true;
+		} else if ("b" == field.name) {
+			has_rgb = true;
+		} else if ("label" == field.name || "l" == field.name || "L" == field.name) {
+			// TODO: What is the right field name?
+			has_label = true;
 		}
 	}
 }
@@ -134,6 +168,180 @@ void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
 				cloud_out.push_back(ufo::map::Point3Color(*iter_x, *iter_y, *iter_z));
 			}
 		}
+	}
+}
+
+void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
+              ufo::map::PointCloudSemanticColor& cloud_out)
+{
+	cloud_out.reserve(cloud_in.data.size() / cloud_in.point_step);
+
+	bool has_x, has_y, has_z, has_rgb;
+	getFields(cloud_in, has_x, has_y, has_z, has_rgb);
+
+	if (!has_x || !has_y || !has_z) {
+		throw std::runtime_error("cloud_in missing one or more of the xyz fields");
+	}
+
+	sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_in, "x");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_in, "y");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_in, "z");
+
+	if (has_rgb) {
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_r(cloud_in, "r");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_g(cloud_in, "g");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_b(cloud_in, "b");
+		for (; iter_x != iter_x.end();
+		     ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b) {
+			if (!std::isnan(*iter_x) && !std::isnan(*iter_y) && !std::isnan(*iter_z) &&
+			    !std::isnan(*iter_r) && !std::isnan(*iter_g) && !std::isnan(*iter_b)) {
+				ufo::map::InstanceType l = 0;  // No instances TODO: Maybe change?
+				cloud_out.push_back(ufo::map::Point3ColorInstance(*iter_x, *iter_y, *iter_z,
+				                                                  *iter_r, *iter_g, *iter_b, l));
+			}
+		}
+	} else {
+		// TODO: Maybe not throw?
+		if (!has_rgb)
+			throw std::runtime_error("cloud_in missing one or more of the rgb fields");
+	}
+}
+
+void rosToUfoExperiment(sensor_msgs::PointCloud2 const& cloud_in,
+                        ufo::map::PointCloudSemanticColor& cloud_out)
+{
+	cloud_out.reserve(cloud_in.data.size() / cloud_in.point_step);
+
+	bool has_x, has_y, has_z, has_rgb;
+	getFields(cloud_in, has_x, has_y, has_z, has_rgb);
+
+	if (!has_x || !has_y || !has_z) {
+		throw std::runtime_error("cloud_in missing one or more of the xyz fields");
+	}
+
+	sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_in, "x");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_in, "y");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_in, "z");
+
+	if (has_rgb) {
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_r(cloud_in, "r");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_g(cloud_in, "g");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_b(cloud_in, "b");
+
+		for (; iter_x != iter_x.end();
+		     ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b) {
+			if (!std::isnan(*iter_x) && !std::isnan(*iter_y) && !std::isnan(*iter_z) &&
+			    !std::isnan(*iter_r) && !std::isnan(*iter_g) && !std::isnan(*iter_b)) {
+				ufo::map::InstanceType l;
+				if (*iter_r == 0 && *iter_g == 0) {
+					l = 1;
+				} else if (*iter_r == 0 && *iter_b == 0) {
+					l = 2;
+				} else if (*iter_g == 0 && *iter_b == 0) {
+					l = 3;
+				} else {
+					l = 0;
+				}
+				cloud_out.push_back(ufo::map::Point3ColorInstance(*iter_x, *iter_y, *iter_z,
+				                                                  *iter_r, *iter_g, *iter_b, l));
+			}
+		}
+	} else {
+		// TODO: Maybe not throw?
+		if (!has_rgb)
+			throw std::runtime_error("cloud_in missing one or more of the rgb fields");
+	}
+}
+
+void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
+              sensor_msgs::Image const& instance_image,
+              ufo::map::PointCloudSemanticColor& cloud_out)
+{
+	cloud_out.reserve(cloud_in.data.size() / cloud_in.point_step);
+
+	bool has_x, has_y, has_z, has_rgb;
+	getFields(cloud_in, has_x, has_y, has_z, has_rgb);
+
+	if (!has_x || !has_y || !has_z) {
+		throw std::runtime_error("cloud_in missing one or more of the xyz fields");
+	}
+
+	sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_in, "x");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_in, "y");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_in, "z");
+
+	if (has_rgb) {
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_r(cloud_in, "r");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_g(cloud_in, "g");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_b(cloud_in, "b");
+
+		auto iter_l = instance_image.data.begin();
+		int count = 0;
+		for (; iter_x != iter_x.end();
+		     ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b,
+		     iter_l += 2) {  // iter_l incremented twice due to alpha channel
+
+			if (!std::isnan(*iter_x) && !std::isnan(*iter_y) && !std::isnan(*iter_z) &&
+			    !std::isnan(*iter_r) && !std::isnan(*iter_g) && !std::isnan(*iter_b)) {
+				ufo::map::InstanceType l;
+				std::memcpy(&l, &(*iter_l), 2);  // instance packed as uint16
+				cloud_out.push_back(ufo::map::Point3ColorInstance(*iter_x, *iter_y, *iter_z,
+				                                                  *iter_r, *iter_g, *iter_b, l));
+			}
+		}
+	} else {
+		// TODO: Maybe not throw?
+		if (!has_rgb)
+			throw std::runtime_error("cloud_in missing one or more of the rgb fields");
+	}
+}
+
+void rosToUfo(sensor_msgs::PointCloud2 const& cloud_in,
+              ufomap_msgs::Labels const& labels_in,
+              ufo::map::PointCloudSemanticColor& cloud_out)
+{
+	cloud_out.reserve(cloud_in.data.size() / cloud_in.point_step);
+
+	bool has_x, has_y, has_z, has_rgb;
+	getFields(cloud_in, has_x, has_y, has_z, has_rgb);
+
+	if (!has_x || !has_y || !has_z) {
+		throw std::runtime_error("cloud_in missing one or more of the xyz fields");
+	}
+
+	sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_in, "x");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_in, "y");
+	sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_in, "z");
+
+	if (has_rgb) {
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_r(cloud_in, "r");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_g(cloud_in, "g");
+		sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_b(cloud_in, "b");
+		std::cout << " labels size = "
+		          << labels_in.labels.layout.dim[0].size * labels_in.labels.layout.dim[1].size
+		          << ". cloud size = " << cloud_in.height * cloud_in.width << '\n';
+		auto iter_l = labels_in.labels.data.begin();
+		for (; iter_x != iter_x.end();
+		     ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b, ++iter_l) {
+			if (!std::isnan(*iter_x) && !std::isnan(*iter_y) && !std::isnan(*iter_z) &&
+			    !std::isnan(*iter_r) && !std::isnan(*iter_g) && !std::isnan(*iter_b)) {
+				ufo::map::InstanceType l = 0;
+				// No label
+				if (*iter_l == -1) {
+					l = 0;
+				} else {
+					l = static_cast<ufo::map::InstanceType>(*iter_l);
+				}
+
+				cloud_out.push_back(ufo::map::Point3ColorInstance(*iter_x, *iter_y, *iter_z,
+				                                                  *iter_r, *iter_g, *iter_b, l));
+			}
+		}
+
+	} else {
+		// TODO: Maybe not throw?
+		if (!has_rgb)
+			throw std::runtime_error("cloud_in missing one or more of the rgb fields");
 	}
 }
 

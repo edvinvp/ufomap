@@ -276,6 +276,7 @@ class PointCloudT
 
 using PointCloud = PointCloudT<Point3>;
 using PointCloudColor = PointCloudT<Point3Color>;
+using PointCloudSemanticColor = PointCloudT<Point3ColorInstance>;
 
 }  // namespace ufo::map
 

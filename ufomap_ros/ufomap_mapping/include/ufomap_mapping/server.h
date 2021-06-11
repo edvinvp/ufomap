@@ -45,6 +45,7 @@
 // UFO
 #include <ufo/map/occupancy_map.h>
 #include <ufo/map/occupancy_map_color.h>
+#include <ufo/map/occupancy_map_semantic_color.h>
 #include <ufomap_mapping/ServerConfig.h>
 #include <ufomap_srvs/ClearVolume.h>
 #include <ufomap_srvs/GetMap.h>
@@ -135,7 +136,9 @@ class Server
 	//
 
 	// Map
-	std::variant<std::monostate, ufo::map::OccupancyMap, ufo::map::OccupancyMapColor> map_;
+	std::variant<std::monostate, ufo::map::OccupancyMap, ufo::map::OccupancyMapColor,
+	             ufo::map::OccupancyMapSemanticColor>
+	    map_;
 	std::string frame_id_;
 
 	// Integration

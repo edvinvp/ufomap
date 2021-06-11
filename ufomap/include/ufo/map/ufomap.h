@@ -44,6 +44,7 @@
 
 #include <ufo/map/occupancy_map.h>
 #include <ufo/map/occupancy_map_color.h>
+#include <ufo/map/occupancy_map_semantic_color.h>
 #include <ufo/map/point_cloud.h>
 #include <ufo/map/types.h>
 

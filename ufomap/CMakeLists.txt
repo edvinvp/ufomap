@@ -65,6 +65,7 @@ set(HEADER_LIST
 	"${PROJECT_SOURCE_DIR}/include/ufo/geometry/types.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/iterator/occupancy_map_nearest.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/iterator/occupancy_map.h"
+	"${PROJECT_SOURCE_DIR}/include/ufo/map/iterator/semantic_occupancy_map.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/iterator/octree_nearest.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/iterator/octree.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/code.h"
@@ -72,6 +73,7 @@ set(HEADER_LIST
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/key.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/occupancy_map_base.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/occupancy_map_color.h"
+	"${PROJECT_SOURCE_DIR}/include/ufo/map/occupancy_map_semantic_color.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/occupancy_map_node.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/occupancy_map.h"
 	"${PROJECT_SOURCE_DIR}/include/ufo/map/octree_node.h"
@@ -89,6 +91,7 @@ set(SRC_LIST
 	"${PROJECT_SOURCE_DIR}/src/geometry/collision_checks.cpp"
 	"${PROJECT_SOURCE_DIR}/src/map/occupancy_map_color.cpp"
 	"${PROJECT_SOURCE_DIR}/src/map/occupancy_map.cpp"
+	"${PROJECT_SOURCE_DIR}/src/map/occupancy_map_semantic_color.cpp"
 )
 
 find_package(PkgConfig REQUIRED)

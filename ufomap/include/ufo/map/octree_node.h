@@ -58,10 +58,7 @@ struct OctreeLeafNode {
 	 * @param s The stream to write the data to
 	 * @return std::ostream&
 	 */
-	std::ostream& writeData(std::ostream& s) const
-	{
-		return value.writeData(s);
-	}
+	std::ostream &writeData(std::ostream &s) const { return value.writeData(s); }
 
 	/**
 	 * @brief Read the data for this node from stream s
@@ -69,10 +66,11 @@ struct OctreeLeafNode {
 	 * @param s The stream to read the data from
 	 * @return std::istream&
 	 */
-	std::istream& readData(std::istream& s)
-	{
-		return value.readData(s);
-	}
+	std::istream &readData(std::istream &s) { return value.readData(s); }
+
+	std::ostream &writeInstances(std::ostream &s) const { return value.writeInstances(s); }
+
+	std::istream &readInstances(std::istream &s) { return value.readInstances(s); }
 };
 
 template <typename T>
@@ -84,7 +82,7 @@ struct OctreeInnerNodeBase : T {
 	bool is_leaf = true;
 
 	// Pointer to children
-	void* children = nullptr;
+	void *children = nullptr;
 
 	// void setChildExists(std::size_t index, bool value)
 	// {

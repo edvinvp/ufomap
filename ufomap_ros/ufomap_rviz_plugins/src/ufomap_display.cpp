@@ -298,6 +298,10 @@ void UFOMapDisplay::update(float wall_dt, float ros_dt)
 							    point.setColor(it->color.r / 255.0, it->color.g / 255.0,
 							                   it->color.b / 255.0, it.getOccupancy());
 						    }
+						    if constexpr (std::is_same_v<T, ufo::map::OccupancyMapSemanticColor>) {
+							    point.setColor(it->color.r / 255.0, it->color.g / 255.0,
+							                   it->color.b / 255.0, it.getOccupancy());
+						    }
 
 						    addPoint(points, probabilities, aabb_bbx, type, min_depth, point,
 						             it.getOccupancy(), it.getDepth(), it.getBoundingVolume());
@@ -455,7 +459,6 @@ void UFOMapDisplay::subscribe()
 		unsubscribe();
 
 		std::string const& topic(topic_property_->getStdString());
-
 		if (!topic.empty()) {
 			sub_.reset(new message_filters::Subscriber<ufomap_msgs::UFOMapStamped>());
 			sub_->subscribe(threaded_nh_, topic, queue_size_property_->getInt());
@@ -499,8 +502,9 @@ void UFOMapDisplay::mapCallback(ufomap_msgs::UFOMapStamped::ConstPtr const& msg)
 
 	if (!checkMap(msg->map.info.id, msg->map.info.resolution, msg->map.info.depth_levels)) {
 		if (!createMap(msg->map.info)) {
-			setStatusStd(rviz::StatusProperty::Error, "Message",
-			             (std::string("Unknown UFOMap type '") + msg->map.info.id + "'").c_str());
+			setStatusStd(
+			    rviz::StatusProperty::Error, "Message",
+			    (std::string("Unknown UFOMap type '") + msg->map.info.id + "'").c_str());
 			return;
 		}
 	}
@@ -707,6 +711,11 @@ bool UFOMapDisplay::createMap(ufomap_msgs::UFOMapMetaData const& info)
 	} else if ("occupancy_map_color" == info.id) {
 		map_.emplace<ufo::map::OccupancyMapColor>(info.resolution, info.depth_levels, true,
 		                                          occupied_thres, free_thres);
+		return true;
+	} else if ("occupancy_map_semantic_color" == info.id) {
+		map_.emplace<ufo::map::OccupancyMapSemanticColor>(info.resolution, info.depth_levels,
+		                                                  true, occupied_thres, free_thres);
+
 		return true;
 	}
 

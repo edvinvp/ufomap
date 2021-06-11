@@ -51,9 +51,23 @@ template <typename TREE, typename DATA_TYPE, typename INNER_NODE, typename LEAF_
 class OccupancyMapIterator
     : public OctreeIterator<TREE, DATA_TYPE, INNER_NODE, LEAF_NODE, ONLY_LEAF>
 {
- private:
+ protected:
 	using Base = OctreeIterator<TREE, DATA_TYPE, INNER_NODE, LEAF_NODE, ONLY_LEAF>;
 	using IteratorNode = typename Base::IteratorNode;
+
+	// For Semantic iterator
+	OccupancyMapIterator(TREE const* tree,
+	                     ufo::geometry::BoundingVolume const& bounding_volume,
+	                     bool occupied_space = true, bool free_space = true,
+	                     bool unknown_space = false, bool contains = false,
+	                     DepthType min_depth = 0)
+	    : Base(tree, bounding_volume, min_depth),
+	      occupied_space_(occupied_space),
+	      free_space_(free_space),
+	      unknown_space_(unknown_space),
+	      contains_(contains)
+	{
+	}
 
  public:
 	OccupancyMapIterator() {}
@@ -178,9 +192,10 @@ class OccupancyMapIterator
 			// printf("Occupied space: %s\n", occupied_space_ ? "True" : "False");
 			// printf("Unknown space:  %s\n", unknown_space_ ? "True" : "False");
 			// printf("Free space:     %s\n", free_space_ ? "True" : "False");
-			// printf("Contains occupied: %s\n", containsOccupied(node, depth) ? "True" : "False");
-			// printf("Contains unknown:  %s\n", containsUnknown(node, depth) ? "True" : "False");
-			// printf("Contains Free:     %s\n", containsFree(node, depth) ? "True" : "False");
+			// printf("Contains occupied: %s\n", containsOccupied(node, depth) ? "True" :
+			// "False"); printf("Contains unknown:  %s\n", containsUnknown(node, depth) ? "True"
+			// : "False"); printf("Contains Free:     %s\n", containsFree(node, depth) ? "True"
+			// : "False");
 			return (occupied_space_ && containsOccupied(node, depth)) ||
 			       (unknown_space_ && containsUnknown(node, depth)) ||
 			       (free_space_ && containsFree(node, depth));
@@ -211,7 +226,6 @@ class OccupancyMapIterator
 	bool occupied_space_;
 	bool free_space_;
 	bool unknown_space_;
-
 	bool contains_;
 };
 }  // namespace ufo::map

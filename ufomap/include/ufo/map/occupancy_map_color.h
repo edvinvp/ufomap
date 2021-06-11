@@ -146,7 +146,9 @@ class OccupancyMapColor : public OccupancyMapBase<ColorOccupancyNode<float>>
 
 			indices_.clear();
 
-			Base::insertPointCloudWait();
+			if (integrate_.valid()) {
+				integrate_.wait();
+			}
 
 			if (async) {
 				integrate_ =
@@ -224,7 +226,7 @@ class OccupancyMapColor : public OccupancyMapBase<ColorOccupancyNode<float>>
 
 				Key end_key = Base::toKey(end, depth);
 
-				if (0 < depth && !indices_.insert(Base::toCode(end_key)).second) {
+				if (!indices_.insert(Base::toCode(end_key)).second) {
 					continue;
 				}
 
@@ -249,7 +251,9 @@ class OccupancyMapColor : public OccupancyMapBase<ColorOccupancyNode<float>>
 
 			indices_.clear();
 
-			Base::insertPointCloudWait();
+			if (integrate_.valid()) {
+				integrate_.wait();
+			}
 
 			if (async) {
 				integrate_ =
@@ -303,31 +307,11 @@ class OccupancyMapColor : public OccupancyMapBase<ColorOccupancyNode<float>>
 
 	void setColor(Code const& code, Color color);
 
-	void setColor(Point3 const& coord, Color color, DepthType depth = 0)
-	{
-		setColor(Base::toCode(coord, depth), color);
-	}
-
-	void setColor(double x, double y, double z, Color color, DepthType depth = 0)
-	{
-		setColor(Base::toCode(x, y, z, depth), color);
-	}
-
 	//
 	// Get color
 	//
 
 	Color getColor(Code const& code) const;
-
-	Color getColor(Point3 const& coord, DepthType depth = 0) const
-	{
-		return getColor(Base::toCode(coord, depth));
-	}
-
-	Color getColor(double x, double y, double z, DepthType depth = 0) const
-	{
-		return getColor(Base::toCode(x, y, z, depth));
-	}
 
  protected:
 	//

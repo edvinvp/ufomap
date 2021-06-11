@@ -1,7 +1,9 @@
 /**
  * UFOMap: An Efficient Probabilistic 3D Mapping Framework That Embraces the Unknown
  *
- * @author D. Duberg, KTH Royal Institute of Technology, Copyright (c) 2020.
+ * @author D. Duberg, Edvin von Platen, KTH Royal Institute of Technology, Copyright (c)
+ * 2021.
+ * @see https://github.com/edvinvp/ufomap
  * @see https://github.com/UnknownFreeOccupied/ufomap
  * License: BSD 3
  *
@@ -10,7 +12,7 @@
 /*
  * BSD 3-Clause License
  *
- * Copyright (c) 2020, D. Duberg, KTH Royal Institute of Technology
+ * Copyright (c) 2020, D. Duberg, E. von Platen, KTH Royal Institute of Technology
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,6 +48,10 @@
 #include <ufo/map/code.h>
 #include <ufo/map/color.h>
 #include <ufo/map/octree_node.h>
+
+// STD
+#include <cstddef>  // std::byte
+#include <map>
 
 namespace ufo::map
 {
@@ -161,6 +167,133 @@ struct ColorOccupancyNode : OccupancyNode<T>, ColorNode {
 	std::istream& readData(std::istream& s)
 	{
 		return ColorNode::readData(OccupancyNode<T>::readData(s));
+	}
+};
+
+struct SemanticColorNode {
+	Color color;
+
+	std::map<InstanceType, float> instances;
+
+	SemanticColorNode() {}
+
+	~SemanticColorNode() {}
+
+	SemanticColorNode(Color const& color) : color(color) {}
+
+	// TODO: Check instances
+	// The constant false / true is to stop pruning of these nodes
+	bool operator==(SemanticColorNode const& rhs) const
+	{
+		return rhs.color == color && instances.empty() && rhs.instances.empty();
+	}
+	bool operator!=(SemanticColorNode const& rhs) const
+	{
+		return !(rhs.color == color && instances.empty() && rhs.instances.empty());
+	}
+
+	/**
+	 * @brief Write the data from this node to stream s
+	 *
+	 * @param s The stream to write the data to
+	 * @return std::ostream&
+	 */
+	std::ostream& writeData(std::ostream& s) const
+	{
+		s.write(reinterpret_cast<char const*>(&color), sizeof(color));
+		return s;
+	}
+
+	std::ostream& writeInstances(std::ostream& s) const
+	{
+		// Number of instances
+		uint32_t num_instances = instances.size();
+		s.write(reinterpret_cast<char*>(&num_instances), sizeof(num_instances));
+
+		// The pair of instances (instance, prob)
+		for (auto& [instance, prob] : instances) {
+			s.write(reinterpret_cast<char const*>(&instance), sizeof(instance));
+			s.write(reinterpret_cast<char const*>(&prob), sizeof(prob));
+		}
+		return s;
+	}
+	std::istream& readInstances(std::istream& s)
+	{
+		uint32_t num_instances;
+		s.read(reinterpret_cast<char*>(&num_instances), sizeof(num_instances));
+		instances.clear();
+
+		for (uint32_t i = 0; i < num_instances; ++i) {
+			float prob;
+			InstanceType instance;
+			s.read(reinterpret_cast<char*>(&instance), sizeof(instance));
+			s.read(reinterpret_cast<char*>(&prob), sizeof(prob));
+			auto t = instances.emplace(instance, prob);
+		}
+		return s;
+	}
+	/**
+	 * @brief Read the data for this node from stream s
+	 *
+	 * @param s The stream to read the data from
+	 * @return std::istream&
+	 */
+	std::istream& readData(std::istream& s)
+	{
+		s.read(reinterpret_cast<char*>(&color), sizeof(color));
+		return s;
+	}
+};
+
+template <typename T>
+struct SemanticColorOccupancyNode : OccupancyNode<T>, SemanticColorNode {
+	SemanticColorOccupancyNode() {}
+
+	SemanticColorOccupancyNode(T occupancy, Color const& color = Color())
+	    : OccupancyNode<T>(occupancy), SemanticColorNode(color)
+	{
+	}
+
+	bool operator==(SemanticColorOccupancyNode const& rhs) const
+	{
+		return OccupancyNode<T>::operator==(rhs) && SemanticColorNode::operator==(rhs);
+	}
+
+	bool operator!=(SemanticColorOccupancyNode const& rhs) const
+	{
+		return OccupancyNode<T>::operator!=(rhs) || SemanticColorNode::operator!=(rhs);
+	}
+
+	/**
+	 * @brief Write the data from this node to stream s
+	 *
+	 * @param s The stream to write the data to
+	 * @return std::ostream&
+	 */
+	std::ostream& writeData(std::ostream& s) const
+	{
+		return SemanticColorNode::writeData(OccupancyNode<T>::writeData(s));
+	}
+
+	std::ostream& wrteInstances(std::ostream& s) const
+	{
+		return SemanticColorNode::writeInstances(s);
+	}
+
+	/**
+	 * @brief Read the data for this node from stream s
+	 *
+	 * @param s The stream to read the data from
+	 * @return std::istream&
+	 */
+	std::istream& readData(std::istream& s)
+	{
+		return SemanticColorNode::readData(OccupancyNode<T>::readData(s));
+	}
+
+	std::istream& readInstances(std::istream& s)
+	{
+		return SemanticColorNode::readInstances(s);
 	}
 };
 
